@@ -59,13 +59,15 @@ public class EditKubernetesUniverseTest extends CommissionerBaseTest {
   ShellResponse dummyShellResponse;
 
   String nodePrefix = "demo-universe";
+  String ybSoftwareVersion = "1.0.0";
 
   Map<String, String> config = new HashMap<String, String>();
 
   private void setup() {
     ShellResponse responseEmpty = new ShellResponse();
     ShellResponse responsePod = new ShellResponse();
-    when(mockKubernetesManager.helmUpgrade(any(), any(), any(), any())).thenReturn(responseEmpty);
+    when(mockKubernetesManager.helmUpgrade(any(), any(), any(), any(), any()))
+        .thenReturn(responseEmpty);
     responsePod.message =
         "{\"status\": { \"phase\": \"Running\", \"conditions\": [{\"status\": \"True\"}]}}";
     when(mockKubernetesManager.getPodStatus(any(), any(), any())).thenReturn(responsePod);
@@ -106,7 +108,7 @@ public class EditKubernetesUniverseTest extends CommissionerBaseTest {
     userIntent.masterGFlags = new HashMap<>();
     userIntent.tserverGFlags = new HashMap<>();
     userIntent.universeName = "demo-universe";
-    userIntent.ybSoftwareVersion = "old-version";
+    userIntent.ybSoftwareVersion = ybSoftwareVersion;
     defaultUniverse = createUniverse(defaultCustomer.getCustomerId());
     Universe.saveDetails(
         defaultUniverse.universeUUID,
@@ -273,6 +275,7 @@ public class EditKubernetesUniverseTest extends CommissionerBaseTest {
   public void testAddNode() {
     setupUniverseSingleAZ(/* Create Masters */ true);
 
+    ArgumentCaptor<String> expectedYbSoftwareVersion = ArgumentCaptor.forClass(String.class);
     ArgumentCaptor<String> expectedNodePrefix = ArgumentCaptor.forClass(String.class);
     ArgumentCaptor<String> expectedNamespace = ArgumentCaptor.forClass(String.class);
     ArgumentCaptor<String> expectedOverrideFile = ArgumentCaptor.forClass(String.class);
@@ -328,6 +331,7 @@ public class EditKubernetesUniverseTest extends CommissionerBaseTest {
 
     verify(mockKubernetesManager, times(1))
         .helmUpgrade(
+            expectedYbSoftwareVersion.capture(),
             expectedConfig.capture(),
             expectedNodePrefix.capture(),
             expectedNamespace.capture(),
@@ -336,6 +340,7 @@ public class EditKubernetesUniverseTest extends CommissionerBaseTest {
         .getPodInfos(
             expectedConfig.capture(), expectedNodePrefix.capture(), expectedNamespace.capture());
 
+    assertEquals(ybSoftwareVersion, expectedYbSoftwareVersion.getValue());
     assertEquals(config, expectedConfig.getValue());
     assertEquals(nodePrefix, expectedNodePrefix.getValue());
     assertEquals(nodePrefix, expectedNamespace.getValue());
@@ -354,6 +359,7 @@ public class EditKubernetesUniverseTest extends CommissionerBaseTest {
     setupUniverseSingleAZ(/* Create Masters */ true);
 
     ArgumentCaptor<UUID> expectedUniverseUUID = ArgumentCaptor.forClass(UUID.class);
+    ArgumentCaptor<String> expectedYbSoftwareVersion = ArgumentCaptor.forClass(String.class);
     ArgumentCaptor<String> expectedNodePrefix = ArgumentCaptor.forClass(String.class);
     ArgumentCaptor<String> expectedNamespace = ArgumentCaptor.forClass(String.class);
     ArgumentCaptor<String> expectedOverrideFile = ArgumentCaptor.forClass(String.class);
@@ -393,6 +399,7 @@ public class EditKubernetesUniverseTest extends CommissionerBaseTest {
 
     verify(mockKubernetesManager, times(1))
         .helmUpgrade(
+            expectedYbSoftwareVersion.capture(),
             expectedConfig.capture(),
             expectedNodePrefix.capture(),
             expectedNamespace.capture(),
@@ -401,6 +408,7 @@ public class EditKubernetesUniverseTest extends CommissionerBaseTest {
         .getPodInfos(
             expectedConfig.capture(), expectedNodePrefix.capture(), expectedNamespace.capture());
 
+    assertEquals(ybSoftwareVersion, expectedYbSoftwareVersion.getValue());
     assertEquals(config, expectedConfig.getValue());
     assertEquals(nodePrefix, expectedNodePrefix.getValue());
     assertEquals(nodePrefix, expectedNamespace.getValue());
@@ -421,6 +429,7 @@ public class EditKubernetesUniverseTest extends CommissionerBaseTest {
   public void testChangeInstanceType() {
     setupUniverseSingleAZ(/* Create Masters */ true);
 
+    ArgumentCaptor<String> expectedYbSoftwareVersion = ArgumentCaptor.forClass(String.class);
     ArgumentCaptor<UUID> expectedUniverseUUID = ArgumentCaptor.forClass(UUID.class);
     ArgumentCaptor<String> expectedNodePrefix = ArgumentCaptor.forClass(String.class);
     ArgumentCaptor<String> expectedNamespace = ArgumentCaptor.forClass(String.class);
@@ -468,6 +477,7 @@ public class EditKubernetesUniverseTest extends CommissionerBaseTest {
 
     verify(mockKubernetesManager, times(3))
         .helmUpgrade(
+            expectedYbSoftwareVersion.capture(),
             expectedConfig.capture(),
             expectedNodePrefix.capture(),
             expectedNamespace.capture(),
@@ -479,6 +489,7 @@ public class EditKubernetesUniverseTest extends CommissionerBaseTest {
         .getPodInfos(
             expectedConfig.capture(), expectedNodePrefix.capture(), expectedNamespace.capture());
 
+    assertEquals(ybSoftwareVersion, expectedYbSoftwareVersion.getValue());
     assertEquals(config, expectedConfig.getValue());
     assertEquals(nodePrefix, expectedNodePrefix.getValue());
     assertEquals(nodePrefix, expectedNamespace.getValue());

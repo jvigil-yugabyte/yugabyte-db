@@ -165,6 +165,7 @@ public class KubernetesCommandExecutor extends UniverseTaskBase {
         overridesFile = this.generateHelmOverride();
         response =
             kubernetesManager.helmInstall(
+                taskParams().ybSoftwareVersion,
                 config,
                 taskParams().providerUUID,
                 taskParams().nodePrefix,
@@ -176,7 +177,11 @@ public class KubernetesCommandExecutor extends UniverseTaskBase {
         overridesFile = this.generateHelmOverride();
         response =
             kubernetesManager.helmUpgrade(
-                config, taskParams().nodePrefix, taskParams().namespace, overridesFile);
+                taskParams().ybSoftwareVersion,
+                config,
+                taskParams().nodePrefix,
+                taskParams().namespace,
+                overridesFile);
         flag = true;
         break;
       case UPDATE_NUM_NODES:

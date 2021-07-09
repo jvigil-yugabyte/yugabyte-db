@@ -58,6 +58,8 @@ public class UpgradeKubernetesUniverseTest extends CommissionerBaseTest {
   ShellResponse dummyShellResponse;
 
   String nodePrefix = "demo-universe";
+  String ybSoftwareVersionOld = "old-version";
+  String ybSoftwareVersionNew = "new-version";
 
   Map<String, String> config = new HashMap<String, String>();
 
@@ -68,7 +70,7 @@ public class UpgradeKubernetesUniverseTest extends CommissionerBaseTest {
     userIntent.masterGFlags = new HashMap<>();
     userIntent.tserverGFlags = new HashMap<>();
     userIntent.universeName = "demo-universe";
-    userIntent.ybSoftwareVersion = "old-version";
+    userIntent.ybSoftwareVersion = ybSoftwareVersionOld;
     defaultUniverse = createUniverse(defaultCustomer.getCustomerId());
     config.put("KUBECONFIG", "test");
     defaultProvider.setConfig(config);
@@ -83,7 +85,8 @@ public class UpgradeKubernetesUniverseTest extends CommissionerBaseTest {
 
     ShellResponse responseEmpty = new ShellResponse();
     ShellResponse responsePod = new ShellResponse();
-    when(mockKubernetesManager.helmUpgrade(any(), any(), any(), any())).thenReturn(responseEmpty);
+    when(mockKubernetesManager.helmUpgrade(any(), any(), any(), any(), any()))
+        .thenReturn(responseEmpty);
 
     Master.SysClusterConfigEntryPB.Builder configBuilder =
         Master.SysClusterConfigEntryPB.newBuilder().setVersion(2);
@@ -392,6 +395,7 @@ public class UpgradeKubernetesUniverseTest extends CommissionerBaseTest {
     setupUniverseSingleAZ(/* Create Masters */ false);
 
     ArgumentCaptor<UUID> expectedUniverseUUID = ArgumentCaptor.forClass(UUID.class);
+    ArgumentCaptor<String> expectedYbSoftwareVersion = ArgumentCaptor.forClass(String.class);
     ArgumentCaptor<String> expectedNodePrefix = ArgumentCaptor.forClass(String.class);
     ArgumentCaptor<String> expectedNamespace = ArgumentCaptor.forClass(String.class);
     ArgumentCaptor<String> expectedOverrideFile = ArgumentCaptor.forClass(String.class);
@@ -406,6 +410,7 @@ public class UpgradeKubernetesUniverseTest extends CommissionerBaseTest {
 
     verify(mockKubernetesManager, times(6))
         .helmUpgrade(
+            expectedYbSoftwareVersion.capture(),
             expectedConfig.capture(),
             expectedNodePrefix.capture(),
             expectedNamespace.capture(),
@@ -417,6 +422,7 @@ public class UpgradeKubernetesUniverseTest extends CommissionerBaseTest {
         .getPodInfos(
             expectedConfig.capture(), expectedNodePrefix.capture(), expectedNamespace.capture());
 
+    assertEquals(ybSoftwareVersionNew, expectedYbSoftwareVersion.getValue());
     assertEquals(config, expectedConfig.getValue());
     assertEquals(nodePrefix, expectedNodePrefix.getValue());
     assertEquals(nodePrefix, expectedNamespace.getValue());
@@ -434,6 +440,7 @@ public class UpgradeKubernetesUniverseTest extends CommissionerBaseTest {
     setupUniverseSingleAZ(/* Create Masters */ false);
 
     ArgumentCaptor<UUID> expectedUniverseUUID = ArgumentCaptor.forClass(UUID.class);
+    ArgumentCaptor<String> expectedYbSoftwareVersion = ArgumentCaptor.forClass(String.class);
     ArgumentCaptor<String> expectedNodePrefix = ArgumentCaptor.forClass(String.class);
     ArgumentCaptor<String> expectedNamespace = ArgumentCaptor.forClass(String.class);
     ArgumentCaptor<String> expectedOverrideFile = ArgumentCaptor.forClass(String.class);
@@ -449,6 +456,7 @@ public class UpgradeKubernetesUniverseTest extends CommissionerBaseTest {
 
     verify(mockKubernetesManager, times(6))
         .helmUpgrade(
+            expectedYbSoftwareVersion.capture(),
             expectedConfig.capture(),
             expectedNodePrefix.capture(),
             expectedNamespace.capture(),
@@ -460,6 +468,7 @@ public class UpgradeKubernetesUniverseTest extends CommissionerBaseTest {
         .getPodInfos(
             expectedConfig.capture(), expectedNodePrefix.capture(), expectedNamespace.capture());
 
+    assertEquals(ybSoftwareVersionOld, expectedYbSoftwareVersion.getValue());
     assertEquals(config, expectedConfig.getValue());
     assertEquals(nodePrefix, expectedNodePrefix.getValue());
     assertEquals(nodePrefix, expectedNamespace.getValue());
@@ -477,6 +486,7 @@ public class UpgradeKubernetesUniverseTest extends CommissionerBaseTest {
     setupUniverseMultiAZ(/* Create Masters */ false);
 
     ArgumentCaptor<UUID> expectedUniverseUUID = ArgumentCaptor.forClass(UUID.class);
+    ArgumentCaptor<String> expectedYbSoftwareVersion = ArgumentCaptor.forClass(String.class);
     ArgumentCaptor<String> expectedNodePrefix = ArgumentCaptor.forClass(String.class);
     ArgumentCaptor<String> expectedNamespace = ArgumentCaptor.forClass(String.class);
     ArgumentCaptor<String> expectedOverrideFile = ArgumentCaptor.forClass(String.class);
@@ -486,11 +496,12 @@ public class UpgradeKubernetesUniverseTest extends CommissionerBaseTest {
     String overrideFileRegex = "(.*)" + defaultUniverse.universeUUID + "(.*).yml";
 
     UpgradeKubernetesUniverse.Params taskParams = new UpgradeKubernetesUniverse.Params();
-    taskParams.ybSoftwareVersion = "new-version";
+    taskParams.ybSoftwareVersion = ybSoftwareVersionNew;
     TaskInfo taskInfo = submitTask(taskParams, UpgradeTaskType.Software);
 
     verify(mockKubernetesManager, times(6))
         .helmUpgrade(
+            expectedYbSoftwareVersion.capture(),
             expectedConfig.capture(),
             expectedNodePrefix.capture(),
             expectedNamespace.capture(),
@@ -502,6 +513,7 @@ public class UpgradeKubernetesUniverseTest extends CommissionerBaseTest {
         .getPodInfos(
             expectedConfig.capture(), expectedNodePrefix.capture(), expectedNamespace.capture());
 
+    assertEquals(ybSoftwareVersionNew, expectedYbSoftwareVersion.getValue());
     assertEquals(config, expectedConfig.getValue());
     assertTrue(expectedNodePrefix.getValue().contains(nodePrefix));
     assertTrue(expectedNamespace.getValue().contains(nodePrefix));
@@ -519,6 +531,7 @@ public class UpgradeKubernetesUniverseTest extends CommissionerBaseTest {
     setupUniverseMultiAZ(/* Create Masters */ false);
 
     ArgumentCaptor<UUID> expectedUniverseUUID = ArgumentCaptor.forClass(UUID.class);
+    ArgumentCaptor<String> expectedYbSoftwareVersion = ArgumentCaptor.forClass(String.class);
     ArgumentCaptor<String> expectedNodePrefix = ArgumentCaptor.forClass(String.class);
     ArgumentCaptor<String> expectedNamespace = ArgumentCaptor.forClass(String.class);
     ArgumentCaptor<String> expectedOverrideFile = ArgumentCaptor.forClass(String.class);
@@ -534,6 +547,7 @@ public class UpgradeKubernetesUniverseTest extends CommissionerBaseTest {
 
     verify(mockKubernetesManager, times(6))
         .helmUpgrade(
+            expectedYbSoftwareVersion.capture(),
             expectedConfig.capture(),
             expectedNodePrefix.capture(),
             expectedNamespace.capture(),
@@ -545,6 +559,7 @@ public class UpgradeKubernetesUniverseTest extends CommissionerBaseTest {
         .getPodInfos(
             expectedConfig.capture(), expectedNodePrefix.capture(), expectedNamespace.capture());
 
+    assertEquals(ybSoftwareVersionOld, expectedYbSoftwareVersion.getValue());
     assertEquals(config, expectedConfig.getValue());
     assertTrue(expectedNodePrefix.getValue().contains(nodePrefix));
     assertTrue(expectedNamespace.getValue().contains(nodePrefix));

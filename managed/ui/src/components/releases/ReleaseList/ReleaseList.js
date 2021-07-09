@@ -218,9 +218,18 @@ export default class ReleaseList extends Component {
               tdStyle={{ whiteSpace: 'normal' }}
               columnClassName="no-border name-column"
               className="no-border"
-              width="550px"
+              width="225px"
             >
               File Path
+            </TableHeaderColumn>
+            <TableHeaderColumn
+              dataField="chartPath"
+              tdStyle={{ whiteSpace: 'normal' }}
+              columnClassName="no-border name-column"
+              className="no-border"
+              width="225px"
+            >
+              Chart Path
             </TableHeaderColumn>
             <TableHeaderColumn
               dataField="imageTag"

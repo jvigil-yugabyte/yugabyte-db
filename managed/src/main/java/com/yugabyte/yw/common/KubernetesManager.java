@@ -5,8 +5,6 @@ package com.yugabyte.yw.common;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.collect.ImmutableList;
 import com.google.inject.Inject;
-import com.yugabyte.yw.common.Util;
-import com.yugabyte.yw.models.Provider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -22,6 +20,8 @@ public class KubernetesManager {
   public static final Logger LOG = LoggerFactory.getLogger(KubernetesManager.class);
 
   private static final long DEFAULT_TIMEOUT_SECS = 300;
+
+  @Inject ReleaseManager releaseManager;
 
   @Inject ShellProcessHandler shellProcessHandler;
 
@@ -57,17 +57,15 @@ public class KubernetesManager {
   }
 
   public ShellResponse helmInstall(
+      String ybSoftwareVersion,
       Map<String, String> config,
       UUID providerUUID,
       String universePrefix,
       String namespace,
       String overridesFile) {
-    String helmPackagePath = appConfig.getString("yb.helm.package");
-    if (helmPackagePath == null || helmPackagePath.isEmpty()) {
-      throw new RuntimeException("Helm Package path not provided.");
-    }
-    Provider provider = Provider.get(providerUUID);
-    Map<String, String> configProvider = provider.getConfig();
+
+    String helmPackagePath = this.getHelmPackagePath(ybSoftwareVersion);
+
     List<String> commandList =
         ImmutableList.of(
             "helm",
@@ -183,11 +181,14 @@ public class KubernetesManager {
   }
 
   public ShellResponse helmUpgrade(
-      Map<String, String> config, String universePrefix, String namespace, String overridesFile) {
-    String helmPackagePath = appConfig.getString("yb.helm.package");
-    if (helmPackagePath == null || helmPackagePath.isEmpty()) {
-      throw new RuntimeException("Helm Package path not provided.");
-    }
+      String ybSoftwareVersion,
+      Map<String, String> config,
+      String universePrefix,
+      String namespace,
+      String overridesFile) {
+
+    String helmPackagePath = this.getHelmPackagePath(ybSoftwareVersion);
+
     List<String> commandList =
         ImmutableList.of(
             "helm",
@@ -259,5 +260,21 @@ public class KubernetesManager {
   private ShellResponse execCommand(Map<String, String> config, List<String> command) {
     String description = String.join(" ", command);
     return shellProcessHandler.run(command, config, description);
+  }
+
+  private String getHelmPackagePath(String ybSoftwareVersion) {
+    String helmPackagePath = null;
+
+    ReleaseManager.ReleaseMetadata releaseMetadata =
+        releaseManager.getReleaseByVersion(ybSoftwareVersion);
+    if (releaseMetadata != null) {
+      helmPackagePath = releaseMetadata.chartPath;
+    }
+
+    if (helmPackagePath == null || helmPackagePath.isEmpty()) {
+      throw new RuntimeException("Helm Package path not found for release: " + ybSoftwareVersion);
+    }
+
+    return helmPackagePath;
   }
 }

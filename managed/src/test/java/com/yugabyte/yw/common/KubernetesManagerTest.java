@@ -69,6 +69,7 @@ public class KubernetesManagerTest extends FakeDBApplication {
     switch (commandType) {
       case HELM_INSTALL:
         kubernetesManager.helmInstall(
+            "1.0.0",
             configProvider,
             defaultProvider.uuid,
             "demo-universe",
@@ -77,7 +78,7 @@ public class KubernetesManagerTest extends FakeDBApplication {
         break;
       case HELM_UPGRADE:
         kubernetesManager.helmUpgrade(
-            configProvider, "demo-universe", "demo-namespace", "/tmp/override.yml");
+            "1.0.0", configProvider, "demo-universe", "demo-namespace", "/tmp/override.yml");
         break;
       case POD_INFO:
         kubernetesManager.getPodInfos(configProvider, "demo-universe", "demo-namespace");
@@ -97,7 +98,10 @@ public class KubernetesManagerTest extends FakeDBApplication {
 
   @Test
   public void testHelmUpgrade() {
-    when(mockAppConfig.getString("yb.helm.package")).thenReturn("/my/helm.tgz");
+    when(mockReleaseManager.getReleaseByVersion("1.0.0"))
+        .thenReturn(
+            ReleaseManager.ReleaseMetadata.create("1.0.0")
+                .withChartPath("/opt/yugabyte/releases/yugabyte-1.0.0-helm.tar.gz"));
     when(mockAppConfig.getLong("yb.helm.timeout_secs")).thenReturn((long) 600);
     runCommand(KubernetesCommandExecutor.CommandType.HELM_UPGRADE);
     assertEquals(
@@ -105,7 +109,7 @@ public class KubernetesManagerTest extends FakeDBApplication {
             "helm",
             "upgrade",
             "demo-universe",
-            "/my/helm.tgz",
+            "/opt/yugabyte/releases/yugabyte-1.0.0-helm.tar.gz",
             "-f",
             "/tmp/override.yml",
             "--namespace",
@@ -119,14 +123,17 @@ public class KubernetesManagerTest extends FakeDBApplication {
 
   @Test
   public void testHelmUpgradeNoTimeout() {
-    when(mockAppConfig.getString("yb.helm.package")).thenReturn("/my/helm.tgz");
+    when(mockReleaseManager.getReleaseByVersion("1.0.0"))
+        .thenReturn(
+            ReleaseManager.ReleaseMetadata.create("1.0.0")
+                .withChartPath("/opt/yugabyte/releases/yugabyte-1.0.0-helm.tar.gz"));
     runCommand(KubernetesCommandExecutor.CommandType.HELM_UPGRADE);
     assertEquals(
         ImmutableList.of(
             "helm",
             "upgrade",
             "demo-universe",
-            "/my/helm.tgz",
+            "/opt/yugabyte/releases/yugabyte-1.0.0-helm.tar.gz",
             "-f",
             "/tmp/override.yml",
             "--namespace",
@@ -143,13 +150,16 @@ public class KubernetesManagerTest extends FakeDBApplication {
     try {
       runCommand(KubernetesCommandExecutor.CommandType.HELM_UPGRADE);
     } catch (RuntimeException e) {
-      assertEquals("Helm Package path not provided.", e.getMessage());
+      assertEquals("Helm Package path not found for release: 1.0.0", e.getMessage());
     }
   }
 
   @Test
   public void helmInstallWithRequiredConfig() {
-    when(mockAppConfig.getString("yb.helm.package")).thenReturn("/my/helm.tgz");
+    when(mockReleaseManager.getReleaseByVersion("1.0.0"))
+        .thenReturn(
+            ReleaseManager.ReleaseMetadata.create("1.0.0")
+                .withChartPath("/opt/yugabyte/releases/yugabyte-1.0.0-helm.tar.gz"));
     when(mockAppConfig.getLong("yb.helm.timeout_secs")).thenReturn((long) 600);
     runCommand(KubernetesCommandExecutor.CommandType.HELM_INSTALL);
     assertEquals(
@@ -157,7 +167,7 @@ public class KubernetesManagerTest extends FakeDBApplication {
             "helm",
             "install",
             "demo-universe",
-            "/my/helm.tgz",
+            "/opt/yugabyte/releases/yugabyte-1.0.0-helm.tar.gz",
             "--namespace",
             "demo-namespace",
             "-f",
@@ -171,14 +181,17 @@ public class KubernetesManagerTest extends FakeDBApplication {
 
   @Test
   public void helmInstallWithNoTimeout() {
-    when(mockAppConfig.getString("yb.helm.package")).thenReturn("/my/helm.tgz");
+    when(mockReleaseManager.getReleaseByVersion("1.0.0"))
+        .thenReturn(
+            ReleaseManager.ReleaseMetadata.create("1.0.0")
+                .withChartPath("/opt/yugabyte/releases/yugabyte-1.0.0-helm.tar.gz"));
     runCommand(KubernetesCommandExecutor.CommandType.HELM_INSTALL);
     assertEquals(
         ImmutableList.of(
             "helm",
             "install",
             "demo-universe",
-            "/my/helm.tgz",
+            "/opt/yugabyte/releases/yugabyte-1.0.0-helm.tar.gz",
             "--namespace",
             "demo-namespace",
             "-f",
@@ -195,7 +208,7 @@ public class KubernetesManagerTest extends FakeDBApplication {
     try {
       runCommand(KubernetesCommandExecutor.CommandType.HELM_INSTALL);
     } catch (RuntimeException e) {
-      assertEquals("Helm Package path not provided.", e.getMessage());
+      assertEquals("Helm Package path not found for release: 1.0.0", e.getMessage());
     }
   }
 
